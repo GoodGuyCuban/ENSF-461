@@ -5,8 +5,9 @@
 
 #include "myalloc.h"
 
+node_t *_arena_start;
+
 int myinit(size_t size){
-    node_t *_arena_start;
     int adjusted_size;
 
     if(size <= 0){
@@ -26,6 +27,6 @@ int myinit(size_t size){
 }
 
 int mydestroy(){
-    node_t *_arena_start;
     munmap(_arena_start, _arena_start->size);
+    return 0;
 }
