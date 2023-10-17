@@ -30,3 +30,32 @@ int mydestroy(){
     munmap(_arena_start, _arena_start->size);
     return 0;
 }
+
+extern void* myalloc(size_t size){
+    node_t *curr = _arena_start;
+    
+
+    while(1){//finding chuck big enough for 
+        if(curr->size >= size && curr->is_free ==1){
+            break;
+        }
+
+        if(curr->fwd != NULL){
+            curr = curr->fwd;
+        }else{//no other chunks left
+            statusno = ERR_OUT_OF_MEMORY;
+            return NULL;
+        }
+    }
+
+    size_t sizeNeeded = size;//total size needed to allocate including header
+
+    if(curr->size > sizeNeeded){
+        //add split code here
+        ;
+    }else{//continue
+        
+    }
+
+
+}
