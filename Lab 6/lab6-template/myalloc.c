@@ -33,10 +33,11 @@ int mydestroy(){
 
 extern void* myalloc(size_t size){
     node_t *curr = _arena_start;
+    size_t sizeNeeded = size;//total size needed to allocate including header
     
 
     while(1){//finding chuck big enough for 
-        if(curr->size >= size && curr->is_free ==1){
+        if(curr->size >= sizeNeeded && curr->is_free ==1){
             break;
         }
 
@@ -48,14 +49,14 @@ extern void* myalloc(size_t size){
         }
     }
 
-    size_t sizeNeeded = size;//total size needed to allocate including header
 
     if(curr->size > sizeNeeded){
         //add split code here
         ;
-    }else{//continue
-        
     }
+
+
+
 
 
 }
