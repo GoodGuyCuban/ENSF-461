@@ -8,7 +8,7 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
-                "/home/marcos/dev/ENSF-461/Lab 6/lab6-template/myalloc.c",
+                "/home/goodguycuban/dev/ENSF-461/Lab 6/lab6-template/myalloc.c",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}"
             ],
