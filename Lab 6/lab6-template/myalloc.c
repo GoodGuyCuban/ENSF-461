@@ -79,8 +79,8 @@ void *myalloc(size_t size)
         return NULL;
     }
 
-    // check if size is too big
-    if (size + sizeof(*current) > _arena_start->size)
+    // check if there is sufficient space for the first allocation
+    if (size + sizeof(node_t) > _arena_start->size && _arena_start->is_free == 1)
     {
         statusno = ERR_OUT_OF_MEMORY;
         return NULL;
@@ -93,20 +93,29 @@ void *myalloc(size_t size)
         if (current->is_free == 1 && current->size >= size)
         {
             // check if the current node is big enough to split
-            if (current->size > size + sizeof(node_t))
+            if (current->size > size + 2 * sizeof(node_t))
             {
                 new_node = (node_t *)((char *)current + sizeof(node_t) + size);
-                new_node->size = current->size - size - sizeof(node_t);
+                new_node->size = current->size - size - 2 * (sizeof(node_t));
                 new_node->is_free = 1;
                 new_node->fwd = current->fwd;
                 new_node->bwd = current;
                 current->fwd = new_node;
                 current->size = size;
+                current->is_free = 0;
+                return (void *)((char *)current + sizeof(node_t));
             }
-
-            current->is_free = 0;
-            statusno = 0;
-            return (void *)((char *)current + sizeof(node_t));
+            else
+            {
+                // if the current node is not big enough to split, allocate the whole thing
+                if(current->size - size >= sizeof(node_t)){ // check if there is enough space to split in the arena (including the header)
+                    current->size = size;
+                }
+                current->is_free = 0;
+                statusno = 0;
+                return (void *)((char *)current + sizeof(node_t));
+            }
+            
         }
         else
         {
@@ -120,4 +129,41 @@ void *myalloc(size_t size)
             return NULL;
         }
     }
+    return NULL;
+}
+
+void myfree(void *ptr)
+{
+    // check if arena is initialized
+    if (_arena_start == NULL)
+    {
+        statusno = ERR_UNINITIALIZED;
+        return;
+    }
+
+    // check if ptr is NULL
+    if (ptr == NULL)
+    {
+        statusno = ERR_BAD_ARGUMENTS;
+        return;
+    }
+
+    // check if ptr is in the arena
+    if (ptr < (void *)_arena_start || ptr > (void *)((char *)_arena_start + _arena_start->size))
+    {
+        statusno = ERR_BAD_ARGUMENTS;
+        return;
+    }
+
+    // get the address of the chunk header
+    node_t *chunk = (node_t *)((char *)ptr - sizeof(node_t));
+    // check if the chunk is free
+    if (chunk->is_free == 1)
+    {
+        statusno = ERR_BAD_ARGUMENTS;
+        return;
+    }
+
+    // free the chunk
+    chunk->is_free = 1;
 }
