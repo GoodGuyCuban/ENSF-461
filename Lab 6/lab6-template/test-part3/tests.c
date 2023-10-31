@@ -59,8 +59,7 @@ void test_allocation_withsplits()
   PRINTF_GREEN("Assert %d passed!\n", test++);
   assert(next->bwd == header);
   PRINTF_GREEN("Assert %d passed!\n", test++);
-  size_t truesize = page_size - 64 - (sizeof(node_t) * 2);
-  assert(next->size == truesize);
+  assert(next->size == page_size - 64 - (sizeof(node_t) * 2));
   PRINTF_GREEN("Assert %d passed!\n", test++);
   assert(next->is_free == 1);
   PRINTF_GREEN("Assert %d passed!\n", test++);

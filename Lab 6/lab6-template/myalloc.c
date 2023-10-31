@@ -80,11 +80,13 @@ void *myalloc(size_t size)
     }
 
     // check if there is sufficient space for the first allocation
-    if (size + sizeof(node_t) > _arena_start->size && _arena_start->is_free == 1)
+    if (size + sizeof(node_t) > current->size && current->is_free == 1 && current->fwd == NULL)
     {
         statusno = ERR_OUT_OF_MEMORY;
         return NULL;
     }
+    
+    
 
     // check if size is 0
     while (current != NULL)
@@ -93,10 +95,14 @@ void *myalloc(size_t size)
         if (current->is_free == 1 && current->size >= size)
         {
             // check if the current node is big enough to split
-            if (current->size > size + 2 * sizeof(node_t))
+            if (current->size > size + sizeof(node_t))
             {
                 new_node = (node_t *)((char *)current + sizeof(node_t) + size);
-                new_node->size = current->size - size - 2 * (sizeof(node_t));
+                if (current->bwd == NULL){
+                    new_node->size = current->size - size - (sizeof(node_t) * 2);
+                }else{
+                    new_node->size = current->size - size - (sizeof(node_t));
+                }
                 new_node->is_free = 1;
                 new_node->fwd = current->fwd;
                 new_node->bwd = current;
@@ -149,7 +155,7 @@ void myfree(void *ptr)
     }
 
     // check if ptr is in the arena
-    if (ptr < (void *)_arena_start || ptr > (void *)((char *)_arena_start + _arena_start->size))
+    if (ptr < (void *)_arena_start || ptr > (void *)((char *)_arena_start + getpagesize()))
     {
         statusno = ERR_BAD_ARGUMENTS;
         return;
@@ -162,6 +168,27 @@ void myfree(void *ptr)
     {
         statusno = ERR_BAD_ARGUMENTS;
         return;
+    }
+
+    // if there are 2 or more contiguous chunks, merge them into one large chunk
+    if (chunk->fwd != NULL && chunk->fwd->is_free == 1)
+    {
+        chunk->size = chunk->size + chunk->fwd->size + sizeof(node_t);
+        chunk->fwd = chunk->fwd->fwd;
+        if (chunk->fwd != NULL)
+        {
+            chunk->fwd->bwd = chunk;
+        }
+    }
+
+    if (chunk->bwd != NULL && chunk->bwd->is_free == 1)
+    {
+        chunk->bwd->size = chunk->bwd->size + chunk->size + sizeof(node_t);
+        chunk->bwd->fwd = chunk->fwd;
+        if (chunk->fwd != NULL)
+        {
+            chunk->fwd->bwd = chunk->bwd;
+        }
     }
 
     // free the chunk

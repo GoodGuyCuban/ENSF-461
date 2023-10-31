@@ -314,7 +314,6 @@ void test_free_coalescing_chains_bwd(){
 
 int main(int argc, char **argv) {
   int test = atoi(argv[1]);
-
   switch(test) {
     case 1:
       test_free_coalescing_case1();
