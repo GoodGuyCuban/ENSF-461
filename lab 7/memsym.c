@@ -32,6 +32,13 @@ char** tokenize_input(char* input) {
     return tokens;
 }
 
+char* define(int OFF, int PFN, int VPN) {
+    char message[256]; // Assuming the message won't exceed 255 characters
+    
+    snprintf(message, sizeof(message), "Current PID: %d. Memory instantiation complete. OFF bits: %d. PFN bits: %d. VPN bits: %d\n", 0, OFF, PFN, VPN);
+    return strdup(message);
+}
+
 int main(int argc, char* argv[]) {
     const char usage[] = "Usage: memsym.out <strategy> <input trace> <output trace>\n";
     char* input_trace;
@@ -55,7 +62,7 @@ int main(int argc, char* argv[]) {
         // Read input file line by line
         char *rez = fgets(buffer, sizeof(buffer), input_file);
         if ( !rez ) {
-            fprintf(stderr, "Reached end of trace. Exiting...\n");
+            //fprintf(stderr, "Reached end of trace. Exiting...\n");
             return -1;
         } else {
             // Remove endline character
@@ -64,6 +71,12 @@ int main(int argc, char* argv[]) {
         char** tokens = tokenize_input(buffer);
 
         // TODO: Implement your memory simulator
+
+        if (strcmp(tokens[0], "define") == 0) {
+            char* message = define(atoi(tokens[1]), atoi(tokens[2]), atoi(tokens[3]));
+            fprintf(output_file, "%s", message);
+            free(message); // Free the allocated memory
+        }
 
         // Deallocate tokens
         for (int i = 0; tokens[i] != NULL; i++)
