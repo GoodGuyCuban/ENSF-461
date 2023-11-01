@@ -7,5 +7,3 @@ memsym.out: memsym.c
 clean:
 	rm -f memsym.out
 
-test:
-	cd test_basic1 && python3 test_basic1.py

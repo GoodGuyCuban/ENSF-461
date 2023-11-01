@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-
+#include <stdint.h> //for unit_32
 #define TRUE 1
 #define FALSE 0
 
@@ -11,6 +11,9 @@ FILE* output_file;
 
 // TLB replacement strategy (FIFO or LRU)
 char* strategy;
+
+//PID
+int PID = 0;
 
 char** tokenize_input(char* input) {
     char** tokens = NULL;
@@ -32,11 +35,59 @@ char** tokenize_input(char* input) {
     return tokens;
 }
 
-char* define(int OFF, int PFN, int VPN) {
+//returns 2 to the power of x
+int pwr2(int num){
+    int output = 1;
+    for(int x = 0; x<num;x++){
+        output *= 2;
+    }
+    return output;
+}
+
+typedef struct{
+    uint32_t* physicalMemory;
+    char* message;
+} DefinedResult;
+
+char* ctxswitch(int pid){
     char message[256]; // Assuming the message won't exceed 255 characters
-    
-    snprintf(message, sizeof(message), "Current PID: %d. Memory instantiation complete. OFF bits: %d. PFN bits: %d. VPN bits: %d\n", 0, OFF, PFN, VPN);
+    if(pid<0 || pid >3){//pid needs to be less 0,1,2,3
+        snprintf(message, sizeof(message), "Current PID: %d. Invalid context switch to process %d\n",PID,pid);
+        return strdup(message);
+    }
+
+    PID = pid;
+    snprintf(message, sizeof(message), "Current PID: %d. Switched execution context to process: %d\n",PID,pid);
     return strdup(message);
+}
+
+
+int defined = 0; 
+DefinedResult define(int OFF, int PFN, int VPN) {
+    DefinedResult result;//struct for result
+
+    //check if defined called
+    char message[256]; // Assuming the message won't exceed 255 characters
+    if(defined == 1){//only allows one define
+        snprintf(message, sizeof(message), "Current PID: %d. Error: multiple calls to define in the same trace\n",PID);
+        result.message = strdup(message);
+        result.physicalMemory = NULL;
+        return result;
+    }
+    int nFrames = pwr2(PFN);
+    int nPages = pwr2(VPN);
+    defined = 1;
+    int arraySize = pwr2(OFF) + pwr2(PFN);
+
+    uint32_t* physicalMemory = (u_int32_t*)malloc(arraySize * sizeof(u_int32_t));
+
+
+    snprintf(message, sizeof(message), "Current PID: %d. Memory instantiation complete. OFF bits: %d. PFN bits: %d. VPN bits: %d\n", PID, OFF, PFN, VPN);
+    result.message = strdup(message);
+    result.physicalMemory = physicalMemory;
+    
+    return result;
+
 }
 
 int main(int argc, char* argv[]) {
@@ -73,9 +124,14 @@ int main(int argc, char* argv[]) {
         // TODO: Implement your memory simulator
 
         if (strcmp(tokens[0], "define") == 0) {
-            char* message = define(atoi(tokens[1]), atoi(tokens[2]), atoi(tokens[3]));
-            fprintf(output_file, "%s", message);
-            free(message); // Free the allocated memory
+            DefinedResult result = define(atoi(tokens[1]), atoi(tokens[2]), atoi(tokens[3]));
+            fprintf(output_file, "%s", result.message);
+        }
+
+        if (strcmp(tokens[0],"ctxswitch")== 0){
+            char* result = ctxswitch(atoi(tokens[1]));
+            fprintf(output_file,"%s",result);
+            free(result);
         }
 
         // Deallocate tokens
