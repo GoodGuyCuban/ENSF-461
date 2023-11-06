@@ -205,6 +205,149 @@ char *unmap(int VPN)
     }
 }
 
+// 2 registers
+struct register
+{
+    int value;
+    char *name;
+};
+
+struct register *registers;
+
+char *load(char *dst, char *src)
+{
+    char message[256];
+    // src can be a register or an immediate value
+    int srcValue;
+    int srcType; // 0 for register, 1 for immediate value
+    if (strcmp(src, "r1") == 0)
+    {
+        srcValue = registers[0].value;
+        srcType = 0;
+    }
+    else if (strcmp(src, "r2") == 0)
+    {
+        srcValue = registers[1].value;
+        srcType = 0;
+    }
+    else
+    {
+        srcValue = atoi(src);
+        srcType = 1;
+    }
+
+    // dst can only be r1 or r2
+    if (strcmp(dst, "r1") == 0)
+    {
+        registers[0].value = srcValue;
+        // return format If <src> is a memory location, it should output:
+        // Loaded value of location <src> (<value>) into register <dst>
+        // • If <src> is an immediate, it should output:
+        // Loaded immediate <src> into register <dst>
+        if (srcType == 0)
+        {
+            snprintf(message, sizeof(message), "Loaded value of location %d (%d) into register %s\n", srcValue, registers[0].value, dst);
+            return strdup(message);
+        }
+        else
+        {
+            snprintf(message, sizeof(message), "Loaded immediate %d into register %s\n", srcValue, dst);
+            return strdup(message);
+        }
+    }
+    else if (strcmp(dst, "r2") == 0)
+    {
+        registers[1].value = srcValue;
+        // return format If <src> is a memory location, it should output:
+        // Loaded value of location <src> (<value>) into register <dst>
+        // • If <src> is an immediate, it should output:
+        // Loaded immediate <src> into register <dst>
+        if (srcType == 0)
+        {
+            snprintf(message, sizeof(message), "Loaded value of location %d (%d) into register %s\n", srcValue, registers[1].value, dst);
+            return strdup(message);
+        }
+        else
+        {
+            snprintf(message, sizeof(message), "Loaded immediate %d into register %s\n", srcValue, dst);
+            return strdup(message);
+        }
+    }
+    else
+    {
+        return "Error: invalid register operand <reg>\n";
+    }
+
+    return NULL;
+}
+
+char *store(char *dst, char *src)
+{
+    char message[256];
+    // src can be a register or an immediate value
+    int srcValue;
+    int srcType; // 0 for register, 1 for immediate value
+    if (strcmp(src, "r1") == 0)
+    {
+        srcValue = registers[0].value;
+        srcType = 0;
+    }
+    else if (strcmp(src, "r2") == 0)
+    {
+        srcValue = registers[1].value;
+        srcType = 0;
+    }
+    else
+    {
+        srcValue = atoi(src);
+        srcType = 1;
+    }
+
+    // dst can only be r1 or r2
+    if (strcmp(dst, "r1") == 0)
+    {
+        registers[0].value = srcValue;
+        // return format If <src> is a memory location, it should output:
+        // Stored value of location <src> (<value>) into register <dst>
+        // • If <src> is an immediate, it should output:
+        // Stored immediate <src> into register <dst>
+        if (srcType == 0)
+        {
+            snprintf(message, sizeof(message), "Stored value of register %s (%d) into location %d\n", src, registers[0].value, srcValue);
+            return strdup(message);
+        }
+        else
+        {
+            snprintf(message, sizeof(message), "Stored immediate %d into location %d\n", srcValue, srcValue);
+            return strdup(message);
+        }
+    }
+    else if (strcmp(dst, "r2") == 0)
+    {
+        registers[1].value = srcValue;
+        // return format If <src> is a memory location, it should output:
+        // Stored value of location <src> (<value>) into register <dst>
+        // • If <src> is an immediate, it should output:
+        // Stored immediate <src> into register <dst>
+        if (srcType == 0)
+        {
+            snprintf(message, sizeof(message), "Stored value of register %s (%d) into location %d\n", src, registers[1].value, srcValue);
+            return strdup(message);
+        }
+        else
+        {
+            snprintf(message, sizeof(message), "Stored immediate %d into location %d\n", srcValue, srcValue);
+            return strdup(message);
+        }
+    }
+    else
+    {
+        return "Error: invalid register operand <reg>\n";
+    }
+
+    return NULL;
+}
+
 char *pinspect(int VPN)
 {
     char message[256];
