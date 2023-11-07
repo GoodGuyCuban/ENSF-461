@@ -14,6 +14,7 @@ char *strategy;
 
 // PID
 int PID = 0;
+u_int16_t timestamp = 0;
 
 char **tokenize_input(char *input)
 {
@@ -82,7 +83,6 @@ struct TLBEntry
     int valid;
     int PFN;
     int VPN;
-    //time
 };
 
 struct TLBEntry *TLB;
@@ -360,6 +360,24 @@ char *pinspect(int VPN)
             // Inspected page table entry <VPN>. Physical frame number: <PFN>. Valid: <VALID>
             snprintf(message, sizeof(message), "Inspected page table entry %d. Physical frame number: %d. Valid: %d\n", VPN, pageTable[i].PFN, pageTable[i].valid);
             return strdup(message);
+        }
+    }
+}
+
+void tinspect(int TLBN) {
+    char message[256];
+    int array_size = sizeof(TLB)/sizeof(TLB[0]);
+
+    // Simple error case if TLBN is greater than the size of the TLB
+    if (TLBN > array_size) {
+        return "Error: TLBN is out of range of the TLB";
+    }
+    
+    // Otherwise, iterate through the TLB to find the desired entry
+    for (int i = 0; i < array_size; i++) {
+        if (i == TLBN) {
+            snprintf(message, sizeof(message), "Inspected TLB entry <%d>. VPN: <%d>. PFN: <%d>. Valid: <%d>. PID: <%d>. Timestamp: <%d>\n", TLBN, TLB[i].VPN, TLB[i].PFN, TLB[i].valid, PID, timestamp);
+            fprintf(output_file, "%s", message);
         }
     }
 }
