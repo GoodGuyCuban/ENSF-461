@@ -82,6 +82,7 @@ struct TLBEntry
     int valid;
     int PFN;
     int VPN;
+    //time
 };
 
 struct TLBEntry *TLB;
@@ -206,13 +207,13 @@ char *unmap(int VPN)
 }
 
 // 2 registers
-struct register
+struct registerR 
 {
-    int value;
+    int address;
     char *name;
 };
 
-struct register *registers;
+struct registerR *registers;
 
 char *load(char *dst, char *src)
 {
@@ -222,12 +223,12 @@ char *load(char *dst, char *src)
     int srcType; // 0 for register, 1 for immediate value
     if (strcmp(src, "r1") == 0)
     {
-        srcValue = registers[0].value;
+        srcValue = registers[0].address;
         srcType = 0;
     }
     else if (strcmp(src, "r2") == 0)
     {
-        srcValue = registers[1].value;
+        srcValue = registers[1].address;
         srcType = 0;
     }
     else
@@ -239,14 +240,14 @@ char *load(char *dst, char *src)
     // dst can only be r1 or r2
     if (strcmp(dst, "r1") == 0)
     {
-        registers[0].value = srcValue;
+        registers[0].address = srcValue;
         // return format If <src> is a memory location, it should output:
         // Loaded value of location <src> (<value>) into register <dst>
         // • If <src> is an immediate, it should output:
         // Loaded immediate <src> into register <dst>
         if (srcType == 0)
         {
-            snprintf(message, sizeof(message), "Loaded value of location %d (%d) into register %s\n", srcValue, registers[0].value, dst);
+            snprintf(message, sizeof(message), "Loaded value of location %d (%d) into register %s\n", srcValue, registers[0].name, dst);
             return strdup(message);
         }
         else
@@ -257,14 +258,14 @@ char *load(char *dst, char *src)
     }
     else if (strcmp(dst, "r2") == 0)
     {
-        registers[1].value = srcValue;
+        registers[1].address = srcValue;
         // return format If <src> is a memory location, it should output:
         // Loaded value of location <src> (<value>) into register <dst>
         // • If <src> is an immediate, it should output:
         // Loaded immediate <src> into register <dst>
         if (srcType == 0)
         {
-            snprintf(message, sizeof(message), "Loaded value of location %d (%d) into register %s\n", srcValue, registers[1].value, dst);
+            snprintf(message, sizeof(message), "Loaded value of location %d (%d) into register %s\n", srcValue, registers[1].name, dst);
             return strdup(message);
         }
         else
@@ -289,12 +290,12 @@ char *store(char *dst, char *src)
     int srcType; // 0 for register, 1 for immediate value
     if (strcmp(src, "r1") == 0)
     {
-        srcValue = registers[0].value;
+        srcValue = registers[0].address;
         srcType = 0;
     }
     else if (strcmp(src, "r2") == 0)
     {
-        srcValue = registers[1].value;
+        srcValue = registers[1].address;
         srcType = 0;
     }
     else
@@ -306,14 +307,14 @@ char *store(char *dst, char *src)
     // dst can only be r1 or r2
     if (strcmp(dst, "r1") == 0)
     {
-        registers[0].value = srcValue;
+        registers[0].address = srcValue;
         // return format If <src> is a memory location, it should output:
         // Stored value of location <src> (<value>) into register <dst>
         // • If <src> is an immediate, it should output:
         // Stored immediate <src> into register <dst>
         if (srcType == 0)
         {
-            snprintf(message, sizeof(message), "Stored value of register %s (%d) into location %d\n", src, registers[0].value, srcValue);
+            snprintf(message, sizeof(message), "Stored value of register %s (%d) into location %d\n", src, registers[0].address, srcValue);
             return strdup(message);
         }
         else
@@ -324,14 +325,14 @@ char *store(char *dst, char *src)
     }
     else if (strcmp(dst, "r2") == 0)
     {
-        registers[1].value = srcValue;
+        registers[1].address = srcValue;
         // return format If <src> is a memory location, it should output:
         // Stored value of location <src> (<value>) into register <dst>
         // • If <src> is an immediate, it should output:
         // Stored immediate <src> into register <dst>
         if (srcType == 0)
         {
-            snprintf(message, sizeof(message), "Stored value of register %s (%d) into location %d\n", src, registers[1].value, srcValue);
+            snprintf(message, sizeof(message), "Stored value of register %s (%d) into location %d\n", src, registers[1].address, srcValue);
             return strdup(message);
         }
         else
