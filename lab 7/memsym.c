@@ -12,13 +12,15 @@ FILE *output_file;
 // TLB replacement strategy (FIFO or LRU)
 char *strategy;
 
-// PID
+// Globals
 int PID = 0;
 u_int16_t timestamp = 0;
 
-// Strucs
+// Physical Memory
+uint32_t *physicalMemory;
+int physicalArraySize;
 
-
+// Structs
 struct pageTableEntry
 {
     int valid;
@@ -33,7 +35,6 @@ struct TLBEntry
     int valid;
     int PFN;
     int VPN;
-    //time
 };
 
 struct TLBEntry *TLB;
@@ -82,7 +83,11 @@ int pwr2(int num)
     return output;
 }
 
-
+// Helper function to print error message for inspect functions
+void inspecterror(char* errorMessage) {
+    snprintf(errorMessage, sizeof(errorMessage), "Index used is out of range");
+    fprintf(output_file, "%s", errorMessage);
+}
 
 void ctxswitch(int pid)
 {
@@ -103,11 +108,8 @@ void ctxswitch(int pid)
 
 
 int defined = 0;
-uint32_t* define(int OFF, int PFN, int VPN)
+void define(int OFF, int PFN, int VPN)
 {
-    uint32_t *physicalMemory;
-
-
     // check if defined called
     char message[256]; // Assuming the message won't exceed 255 characters
     if (defined == 1)
@@ -116,15 +118,15 @@ uint32_t* define(int OFF, int PFN, int VPN)
         fprintf(output_file, "%s", message);
 
         physicalMemory = NULL;
-        return physicalMemory;
+        return;
     }
 
     int nFrames = pwr2(PFN);
     int nPages = pwr2(VPN);
     defined = 1;
-    int arraySize = pwr2(OFF) + pwr2(PFN);
+    physicalArraySize = pwr2(OFF) + pwr2(PFN);
 
-    physicalMemory = (u_int32_t *)malloc(arraySize * sizeof(u_int32_t));
+    physicalMemory = (u_int32_t *)malloc(physicalArraySize * sizeof(u_int32_t));
 
 
     snprintf(message, sizeof(message), "Current PID: %d. Memory instantiation complete. OFF bits: %d. PFN bits: %d. VPN bits: %d\n", PID, OFF, PFN, VPN);
@@ -154,7 +156,7 @@ uint32_t* define(int OFF, int PFN, int VPN)
         TLB[i].VPN = 0;
     }
 
-    return physicalMemory;
+    return;
 }
 
 void map(int VPN, int PFN)
@@ -364,7 +366,7 @@ char *store(char *dst, char *src)
     return NULL;
 }
 
-char *pinspect(int VPN)
+void pinspect(int VPN)
 {
     char message[256];
     // search for vpn in page table
@@ -374,9 +376,11 @@ char *pinspect(int VPN)
         {
             // Inspected page table entry <VPN>. Physical frame number: <PFN>. Valid: <VALID>
             snprintf(message, sizeof(message), "Inspected page table entry %d. Physical frame number: %d. Valid: %d\n", VPN, pageTable[i].PFN, pageTable[i].valid);
-            return strdup(message);
+            fprintf(output_file, "%s", message);
         }
     }
+
+    return;
 }
 
 void tinspect(int TLBN) {
@@ -385,16 +389,50 @@ void tinspect(int TLBN) {
 
     // Simple error case if TLBN is greater than the size of the TLB
     if (TLBN > array_size) {
-        return "Error: TLBN is out of range of the TLB";
+        inspecterror(message);
     }
     
     // Otherwise, iterate through the TLB to find the desired entry
     for (int i = 0; i < array_size; i++) {
         if (i == TLBN) {
-            snprintf(message, sizeof(message), "Inspected TLB entry <%d>. VPN: <%d>. PFN: <%d>. Valid: <%d>. PID: <%d>. Timestamp: <%d>\n", TLBN, TLB[i].VPN, TLB[i].PFN, TLB[i].valid, PID, timestamp);
+            snprintf(message, sizeof(message), "Inspected TLB entry %d. VPN: %d. PFN: %d. Valid: %d. PID: %d. Timestamp: %d\n", TLBN, TLB[i].VPN, TLB[i].PFN, TLB[i].valid, PID, timestamp);
             fprintf(output_file, "%s", message);
         }
     }
+
+    return;
+}
+
+uint32_t linspect(int PL) {
+    char message[256];
+
+    // Checks obvious error case if PL is greater than the size of Physical Memory
+    if (PL > physicalArraySize) {
+        inspecterror(message);
+    }
+
+    snprintf(message, sizeof(message), " Inspected physical location %d. Value: %d\n", PL, physicalMemory[PL]);
+    fprintf(output_file, "%s", message);
+
+    return physicalMemory[PL];
+}
+
+char* rinspect(char* amRegister) {
+    char output[256];
+    int value; 
+
+    // Since there are only two registers, can just check both cases individually
+    if (amRegister == registers[0].name) {
+        value = registers[0].address;
+    }
+
+    if (amRegister == registers[1].name) {
+        value = registers[1].address;
+    }
+    snprintf(output, sizeof(output), "Inspected register %s. Content: %d", amRegister, value);
+    fprintf(output_file, "s", output);
+
+    return output;
 }
 
 int main(int argc, char *argv[])
@@ -438,7 +476,7 @@ int main(int argc, char *argv[])
 
         if (strcmp(tokens[0], "define") == 0)
         {
-            uint32_t result = define(atoi(tokens[1]), atoi(tokens[2]), atoi(tokens[3]));
+            define(atoi(tokens[1]), atoi(tokens[2]), atoi(tokens[3]));
         }
 
         if (strcmp(tokens[0], "ctxswitch") == 0)
@@ -454,6 +492,10 @@ int main(int argc, char *argv[])
         if (strcmp(tokens[0], "unmap") == 0)
         {
             unmap(atoi(tokens[1]));
+        }
+
+        if (strcmp(tokens[0], "rinspect") == 0) {
+            rinspect(tokens[1]);
         }
 
         // Deallocate tokens
