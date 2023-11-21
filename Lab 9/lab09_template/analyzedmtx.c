@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <dirent.h>
@@ -141,7 +142,49 @@ char* scandmtx(char* filepath) {
     }
 
     //Look at dmtxread.c to implement the rest of the dmtx decoding process
-    
+    dmtxImageSetProp(img, DmtxPropImageFlip, DmtxFlipNone);
+
+    //Create a decode object
+    reg = dmtxRegionFindNext(img, NULL);
+    if (reg == NULL) {
+        dmtxImageDestroy(&img);
+        DestroyMagickWand(wand);
+        return NULL;
+    }
+
+    //Create a decode object
+    dec = dmtxDecodeCreate(reg, 1);
+    if (dec == NULL) {
+        dmtxRegionDestroy(&reg);
+        dmtxImageDestroy(&img);
+        DestroyMagickWand(wand);
+        return NULL;
+    }
+
+    //Decode the image
+    msg = dmtxDecodeMatrixRegion(dec, reg, DmtxUndefined);
+    if (msg == NULL) {
+        dmtxDecodeDestroy(&dec);
+        dmtxRegionDestroy(&reg);
+        dmtxImageDestroy(&img);
+        DestroyMagickWand(wand);
+        return NULL;
+    }
+
+    //allocate memory for the result with mmap
+    result = (char*)mmap(NULL, msg->outputSize, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    if (result == MAP_FAILED) {
+        dmtxMessageDestroy(&msg);
+        dmtxDecodeDestroy(&dec);
+        dmtxRegionDestroy(&reg);
+        dmtxImageDestroy(&img);
+        DestroyMagickWand(wand);
+        return NULL;
+    }
+
+    //Copy the message into the result
+    memcpy(result, msg->output, msg->outputSize);
+        
     dmtxImageDestroy(&img);
     DestroyMagickWand(wand);
 
@@ -154,9 +197,9 @@ void generate_dmtx_seq() {
 
     for ( int i = 0; i < numfiles; i++) {
         // Get and save the message from each of the files in the dtmx folder 
-    } 
+        strcpy(filelist[i].message,scandmtx(filelist[i].filename));
+    }
 
-    closedmtx();
 }
 
 //Code for your Parallel Implementation
